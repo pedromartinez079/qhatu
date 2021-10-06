@@ -1,3 +1,9 @@
+#Qhatu original
+.information
+*.log
+*.png
+draft*.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
