@@ -36,7 +36,10 @@ class TradeAsset:
     
     #Generate pandas dataframe for further analysis
     def dataframe(self):
-        df=pd.DataFrame(self.klines)
+        if len(self.klines) > 2:
+            df = pd.DataFrame(self.klines)
+        else:
+            df = pd.DataFrame()
         dfcolumns=len(df.columns) >= 12
         if dfcolumns and self.exchange == 'Binance':
             df.columns=['OpenTime','Open','High','Low','Close','Volume','CloseTime','QuoteAssetVol','NoOfTrades','BuyVolume','TakerbuyquoteassetVol','Nothing']
