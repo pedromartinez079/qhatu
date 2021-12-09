@@ -2,7 +2,7 @@
 Qhatu Twitter Bot
 Post BTC main market indicators and information
 For time frame 4h every hour
-For time frame 1d at 0, 6, 12, 18 hours
+For time frame 1d at UTC 02, 08, 14, 20 hours
 Information source Binance API
 '''
 
@@ -14,6 +14,7 @@ from datetime import datetime
 import logging
 import libTA as libTA
 import TAClass
+import libGraphs as libGraphs
 
 #Twitter keys
 #They must be defined as environment variables before running this application
@@ -129,7 +130,7 @@ def ta(symbol,interval):
 
 #Application loop control
 while True:
-    #Check time hour for 02,08,14,20, if true apply time frame 1d
+    #Check time hour for UTC[02,08,14,20], UTC-5 [03,09,15,21], if true apply time frame 1d
     hourlist = ['02','08','14','20']
     if time.strftime('%H') in hourlist :        
         #Get information using TA function
@@ -153,6 +154,15 @@ while True:
         #print(response)        
     except tweepy.TweepError as e:
         logging.info('%s %s\n%s' % (time.strftime('%Y%m%d %H:%M:%S'), e, response))
+    #Clear twitter api response
+    response=''
+    #Post graph
+    if time.strftime('%H') in ['00','12'] :
+        libGraphs.smas_graph('BTCUSDT', '1d', 'Binance')
+        try:
+            response=api.update_with_media('./smas.png','BTCUSDT SMAs 1d')        
+        except tweepy.TweepError as e:
+            logging.info('%s %s\n%s' % (time.strftime('%Y%m%d %H:%M:%S'), e, response))
     #Wait one hour to for next post        
     time.sleep(3600)
 
