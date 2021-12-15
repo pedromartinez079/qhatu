@@ -162,7 +162,7 @@ while True:
     if time.strftime('%H') in ['00','12'] :
         libGraphs.smas_graph('BTCUSDT', '1d', 'Binance')
         try:
-            response=api.update_with_media('./smas.png','BTCUSDT SMAs 1d')        
+            response=api.update_with_media('./smas.png','#Bitcoin')        
         except tweepy.TweepError as e:
             logging.info('%s %s\n%s' % (time.strftime('%Y%m%d %H:%M:%S'), e, response))
     #Wait one hour to for next post        
