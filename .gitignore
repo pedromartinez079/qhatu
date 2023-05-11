@@ -2,7 +2,9 @@
 .information
 *.log
 *.png
+draft*
 draft*.py
+backup_*.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

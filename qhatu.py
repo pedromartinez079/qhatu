@@ -7,6 +7,17 @@ For time frame 1d at UTC 02, 08, 14, 20 hours
 Information source Binance API
 Tweepy 3.7.0
 Update code for Tweepy 4.4.0!
+
+Requirements:
+    conda create -n qhatu python=3.9.12 spyder-kernels=2.3
+    conda activate qhatu
+    pip3 install tweepy==3.7.0 pandas matplotlib
+Stop using virtual environment
+    conda deactivate
+Remove virtual environment
+    conda remove -n bbbot --all
+    
+Note: Kernel start error for console 1/A & 2/A > Start kernel 3/A
 """
 
 # Libraries
@@ -84,13 +95,14 @@ def ta(symbol, interval):
             1*btcusdt.df[len(btcusdt.df)-20:][['Close']].std(ddof=0))
         # upper = middle+2*closestddev
         lower = middle-2*closestddev
+        lowbbl80 = middle-0.8*2*closestddev
         # RSI
         rsi = btcusdt.rsi(btcusdt.df, 14)
         # MACD
         macd, signal, hist = btcusdt.macd(btcusdt.df)
         # SMAs
         sma8 = btcusdt.sma(btcusdt.df, 8)
-        sma21 = btcusdt.sma(btcusdt.df, 21)
+        sma20 = middle  # btcusdt.sma(btcusdt.df, 20)
         sma50 = btcusdt.sma(btcusdt.df, 50)
         sma100 = btcusdt.sma(btcusdt.df, 100)
         sma200 = btcusdt.sma(btcusdt.df, 200)
@@ -107,8 +119,8 @@ def ta(symbol, interval):
             information = information + \
                 ' StochRSI(%.2f,%.2f) macd(%.2f,%.2f)' % (k, d, macd, signal)
             information = information + \
-                ' sma8:%.2f sma21:%.2f sma50:%.2f sma100:%.2f sma200:%.2f' % (
-                    sma8, sma21, sma50, sma100, sma200)
+                ' sma8:%.2f sma20:%.2f sma50:%.2f sma100:%.2f sma200:%.2f' % (
+                    sma8, sma20, sma50, sma100, sma200)
         # Satoshis units if stock base is BTC
         elif symbol[len(symbol)-3:len(symbol)] == 'BTC':
             information = '%s %s(s):%.2f RSI(%.2f)' % (
@@ -117,8 +129,8 @@ def ta(symbol, interval):
                 ' StochRSI(%.2f,%.2f) macd(%.2f,%.2f)' % (
                     k, d, macd*100000000, signal*100000000)
             information = information + \
-                ' sma8:%.2f sma21:%.2f sma50:%.2f sma100:%.2f sma200:%.2f' % (
-                    sma8*100000000, sma21*100000000, sma50*100000000,
+                ' sma8:%.2f sma20:%.2f sma50:%.2f sma100:%.2f sma200:%.2f' % (
+                    sma8*100000000, sma20*100000000, sma50*100000000,
                     sma100*100000000, sma200*100000000)
         else:
             information = '%s %s:%.2E RSI(%.2f)' % (
@@ -126,56 +138,53 @@ def ta(symbol, interval):
             information = information + \
                 ' StochRSI(%.2f,%.2f) macd(%.2E,%.2E)' % (k, d, macd, signal)
             information = information + \
-                ' sma8:%.2E sma21:%.2E sma50:%.2E sma100:%.2E sma200:%.2E' % (
-                    sma8, sma21, sma50, sma100, sma200)
+                ' sma8:%.2E sma20:%.2E sma50:%.2E sma100:%.2E sma200:%.2E' % (
+                    sma8, sma20, sma50, sma100, sma200)
         # Simple trend indicator
         # For 1d
+        information2 = ''
         if interval == '1d':
-            if sma8 > sma21:
+            if sma8 >= sma20:
                 if 0 < macd < signal:
-                    information = information+' possible flat 0ABC'
-                elif k > d:
-                    information = information+' possible uptrend strategy'
+                    information2 = 'possible flat 0ABC'
+                elif macd > signal and k > d:
+                    information2 = 'possible uptrend strategy'
             else:
-                if macd > signal and close2 <= lower:
-                    information = information+' possible buy the dip strategy'
-        # For 4h
-        elif interval == '4h':
-            if sma21 >= sma200:
-                if 0 < macd < signal:
-                    information = information+' possible flat 0ABC'
-                elif k > d:
-                    information = information+' possible uptrend strategy'
-                elif close2 <= lower:
-                    information = information+' possible buy the dip strategy'
+                if 0 > macd > signal:
+                    information2 = 'possible flat 0ABC'
+                elif macd < signal and k < d:
+                    information2 = 'possible downtrend strategy'
+        # For 1w
+        elif interval == '1w':
+            if sma20 >= sma50:
+                if close2 <= lowbbl80:
+                    information2 = 'possible buy the dip strategy'
             else:
-                if close2 <= lower:
-                    information = information+' possible buy the dip strategy'
+                if close2 <= lower and rsi <= 32:
+                    information2 = 'possible buy the dip strategy'
         # Return information
-        return information
+        return information, information2
     else:
-        return 'Network or API failure'
+        return 'Network or API failure', ''
 
 
 # Application loop control
 while True:
-    # Check time hour for UTC[02,08,14,20], UTC-5 [03,09,15,21]
-    # if true apply time frame 1d
-    hourlist = ['02', '08', '14', '20']
-    if time.strftime('%H') in hourlist:
-        # Get information using TA function
-        txt = ta('BTCUSDT', '1d')
-        # txt = ta('BNBBTC', '4h')
-        # Set time frame 1d
-        tf = '1d'
-    else:
-        # Get information using TA function
-        txt = ta('BTCUSDT', '4h')
-        # txt = ta('BNBBTC', '4h')
-        # Set time frame 4h
-        tf = '4h'
-    if txt != 'Network or API failure':
-        txt = '#Bitcoin Binance %s %s' % (tf, txt[15:])
+    # Use time frame 1d
+    txt1d, txt1d2 = ta('BTCUSDT', '1d')
+    # print(txt1d, txt1d2)
+    # Check time frame 1w for a dip
+    txt1w, txt1w2 = ta('BTCUSDT', '1w')
+    # print(txt1w, txt1w2)
+    # Text for twitter post
+    if txt1d != 'Network or API failure' and txt1w != 'Network or API failure':
+        # Check if TF 1w has a "buy the dip", else post TF 1d information
+        if txt1w2 == 'possible buy the dip strategy':
+            tf = '1w'
+            txt = '#Bitcoin Binance %s %s %s' % (tf, txt1w[15:], txt1w2)
+        else:
+            tf = '1d'
+            txt = '#Bitcoin Binance %s %s %s' % (tf, txt1d[15:], txt1d2)
     # Clear twitter api response
     response = ''
     # Post tweet
