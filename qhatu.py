@@ -1,9 +1,7 @@
 """
 Qhatu Twitter Bot.
 
-Post BTC main market indicators and information
-For time frame 4h every hour
-For time frame 1d at UTC 02, 08, 14, 20 hours
+Post BTC main market indicators and information for time frame 1d
 Information source Binance API
 Tweepy 3.7.0
 Update code for Tweepy 4.4.0!
