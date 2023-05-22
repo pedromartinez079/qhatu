@@ -3,8 +3,7 @@ Qhatu Twitter Bot.
 
 Post BTC main market indicators and information for time frame 1d
 Information source Binance API
-Tweepy 3.7.0
-Update code for Tweepy 4.4.0!
+requirements.txt < Tweepy 4.14.0
 
 Requirements:
     conda create -n qhatu python=3.9.12 spyder-kernels=2.3
@@ -41,12 +40,19 @@ logging.info('*************************************************')
 logging.info('Start %s' % time.ctime())
 
 # Start Twitter session
-# tweepy.debug(True)
-auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-# api = tweepy.API(auth, wait_on_rate_limit=True,
-#                   wait_on_rate_limit_notify=True)
-api = tweepy.API(auth)
+tweepy_auth = tweepy.OAuth1UserHandler(
+        CONSUMER_KEY,
+        CONSUMER_SECRET,
+        ACCESS_KEY,
+        ACCESS_SECRET)
+tweepy_api = tweepy.API(tweepy_auth)
+
+tweepy_client = tweepy.Client(
+    consumer_key=CONSUMER_KEY,
+    consumer_secret=CONSUMER_SECRET,
+    access_token=ACCESS_KEY,
+    access_token_secret=ACCESS_SECRET
+    )
 
 
 # Files
@@ -145,12 +151,12 @@ def ta(symbol, interval):
             if sma8 >= sma20:
                 if 0 < macd < signal:
                     information2 = 'possible flat 0ABC'
-                elif macd > signal and k > d:
+                elif macd > signal and k >= d:
                     information2 = 'possible uptrend strategy'
             else:
                 if 0 > macd > signal:
                     information2 = 'possible flat 0ABC'
-                elif macd < signal and k < d:
+                elif macd < signal and k <= d:
                     information2 = 'possible downtrend strategy'
         # For 1w
         elif interval == '1w':
@@ -166,8 +172,8 @@ def ta(symbol, interval):
         return 'Network or API failure', ''
 
 
-# Application loop control
-while True:
+# Application
+if __name__ == '__main__':
     # Use time frame 1d
     txt1d, txt1d2 = ta('BTCUSDT', '1d')
     # print(txt1d, txt1d2)
@@ -179,17 +185,16 @@ while True:
         # Check if TF 1w has a "buy the dip", else post TF 1d information
         if txt1w2 == 'possible buy the dip strategy':
             tf = '1w'
-            txt = '#Bitcoin Binance %s %s %s' % (tf, txt1w[15:], txt1w2)
+            txt = '#Bitcoin #Binance %s %s %s' % (tf, txt1w[15:], txt1w2)
         else:
             tf = '1d'
-            txt = '#Bitcoin Binance %s %s %s' % (tf, txt1d[15:], txt1d2)
+            txt = '#Bitcoin #Binance %s %s %s' % (tf, txt1d[15:], txt1d2)
     # Clear twitter api response
     response = ''
     # Post tweet
     try:
-        response = api.update_status(txt)
-        # print(response)
-    except tweepy.TweepError as e:
+        response = tweepy_client.create_tweet(text=txt)
+    except tweepy.errors.TweepyException as e:
         logging.info('%s %s\n%s' %
                      (time.strftime('%Y%m%d %H:%M:%S'), e, response))
     # Clear twitter api response
@@ -197,10 +202,12 @@ while True:
     # Post graph
     if time.strftime('%H') in ['00', '12']:
         libGraphs.smas_graph('BTCUSDT', '1d', 'Binance')
-        try:
-            response = api.update_with_media('./smas.png', '#Bitcoin')
-        except tweepy.TweepError as e:
+        try:            
+            response = tweepy_api.update_status_with_media('#Bitcoin #Binance', './smas.png')
+        except tweepy.errors.TweepyException as e:
             logging.info('%s %s\n%s' %
                          (time.strftime('%Y%m%d %H:%M:%S'), e, response))
-    # Wait one hour to for next post
-    time.sleep(3600)
+
+
+
+
