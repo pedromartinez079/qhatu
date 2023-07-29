@@ -40,12 +40,14 @@ logging.info('*************************************************')
 logging.info('Start %s' % time.ctime())
 
 # Start Twitter session
+"""
 tweepy_auth = tweepy.OAuth1UserHandler(
         CONSUMER_KEY,
         CONSUMER_SECRET,
         ACCESS_KEY,
         ACCESS_SECRET)
 tweepy_api = tweepy.API(tweepy_auth)
+"""
 
 tweepy_client = tweepy.Client(
     consumer_key=CONSUMER_KEY,
@@ -198,15 +200,17 @@ if __name__ == '__main__':
         logging.info('%s %s\n%s' %
                      (time.strftime('%Y%m%d %H:%M:%S'), e, response))
     # Clear twitter api response
+    """
     response = ''
     # Post graph
-    if time.strftime('%H') in ['00', '12']:
+    if time.strftime('%H') in ['00', '12'] and False:
         libGraphs.smas_graph('BTCUSDT', '1d', 'Binance')
         try:            
             response = tweepy_api.update_status_with_media('#Bitcoin #Binance', './smas.png')
         except tweepy.errors.TweepyException as e:
             logging.info('%s %s\n%s' %
                          (time.strftime('%Y%m%d %H:%M:%S'), e, response))
+    """
 
 
 
